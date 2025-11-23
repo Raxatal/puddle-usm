@@ -1,5 +1,14 @@
-# Firebase Studio
+# How to Run.
 
-This is a NextJS starter in Firebase Studio.
+Download the zip folder.
+Create a folder anywhere.
+Extract the zip in the folder.
+Open folder in Visual Studio Code.
+Open New Terminal.
 
-To get started, take a look at src/app/page.tsx.
+run in terminal:
+npm install
+npm run dev
+
+Open via localhost.
+
