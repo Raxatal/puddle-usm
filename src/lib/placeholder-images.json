@@ -1,0 +1,70 @@
+{
+  "placeholderImages": [
+    {
+      "id": "textbook",
+      "description": "A stack of textbooks on a wooden desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1758685733395-dba201403b4d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0ZXh0Ym9va3MlMjBkZXNrfGVufDB8fHx8MTc2MzUxNTM5OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "textbooks desk"
+    },
+    {
+      "id": "laptop",
+      "description": "A modern laptop open on a clean workspace.",
+      "imageUrl": "https://images.unsplash.com/flagged/photo-1576697010739-6373b63f3204?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsYXB0b3AlMjB3b3Jrc3BhY2V8ZW58MHx8fHwxNzYzNDQ5NTg0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "laptop workspace"
+    },
+    {
+      "id": "hoodie",
+      "description": "A folded university branded hoodie.",
+      "imageUrl": "https://images.unsplash.com/photo-1641377060957-313a7a1e85a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxob29kaWUlMjBjbG90aGluZ3xlbnwwfHx8fDE3NjM1NTY1NDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hoodie clothing"
+    },
+    {
+      "id": "bicycle",
+      "description": "A bicycle parked on a campus pathway.",
+      "imageUrl": "https://images.unsplash.com/photo-1760536475522-6ace4b661f2f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxiaWN5Y2xlJTIwY2FtcHVzfGVufDB8fHx8MTc2MzU1NjU0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bicycle campus"
+    },
+    {
+      "id": "headphones",
+      "description": "Wireless headphones resting on a table.",
+      "imageUrl": "https://images.unsplash.com/photo-1572119244337-bcb4aae995af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxoZWFkcGhvbmVzJTIwYXVkaW98ZW58MHx8fHwxNzYzNDg5MzM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "headphones audio"
+    },
+    {
+      "id": "notes",
+      "description": "Handwritten study notes organized on a clipboard.",
+      "imageUrl": "https://images.unsplash.com/photo-1690788210614-9052cffd8a14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxub3RlcyUyMHN0dWR5fGVufDB8fHx8MTc2MzU1NjU0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "notes study"
+    },
+    {
+      "id": "calculator",
+      "description": "A scientific calculator next to a math textbook.",
+      "imageUrl": "https://images.unsplash.com/photo-1757256137041-0aab889db199?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjYWxjdWxhdG9yJTIwc2NpZW5jZXxlbnwwfHx8fDE3NjM0NzEyNjd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calculator science"
+    },
+    {
+      "id": "backpack",
+      "description": "A student backpack filled with books.",
+      "imageUrl": "https://images.unsplash.com/photo-1515590573546-cd05dc8557c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxiYWNrcGFjayUyMHN0dWRlbnR8ZW58MHx8fHwxNzYzNDcxMjY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "backpack student"
+    },
+    {
+      "id": "desk-lamp",
+      "description": "A modern LED desk lamp illuminating a book.",
+      "imageUrl": "https://images.unsplash.com/photo-1621447980929-6638614633c8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsYW1wJTIwZGVza3xlbnwwfHx8fDE3NjM1NTY1NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lamp desk"
+    },
+    {
+      "id": "mug",
+      "description": "A coffee mug with a university logo.",
+      "imageUrl": "https://images.unsplash.com/photo-1662057918333-e414cdccfb5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtdWclMjBjb2ZmZWV8ZW58MHx8fHwxNzYzNTM1NTA1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mug coffee"
+    },
+    {
+      "id": "qr-code",
+      "description": "A sample QR code for payment.",
+      "imageUrl": "https://images.unsplash.com/photo-1608226929629-b11e58cbd36b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cXIlMjBjb2RlfGVufDB8fHx8MTc2MzUwNTI5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "qr code"
+    }
+  ]
+}
