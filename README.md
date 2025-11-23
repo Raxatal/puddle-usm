@@ -1,4 +1,4 @@
-# How to Run.
+# How to Run
 
 Download the zip folder.
 Create a folder anywhere.
