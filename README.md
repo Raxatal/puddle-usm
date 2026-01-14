@@ -36,6 +36,8 @@ The project focuses on modern web development practices, including secure authen
 
 <b>git clone into empty project directory
 
+Fill in own Firebase Project configuration in src/firebase/config.ts
+
 npm install
 
 npm run dev</b>
