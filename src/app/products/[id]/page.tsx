@@ -1,3 +1,4 @@
+
 "use client";
 
 import { notFound, useRouter, useParams } from 'next/navigation';
@@ -75,6 +76,7 @@ export default function ProductDetailPage() {
         router.push('/login');
         return;
     }
+    if (!product) return;
     router.push(`/messages/${product.seller.id}?product=${product.id}`);
   };
 
@@ -272,7 +274,7 @@ export default function ProductDetailPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your product listing.
+                                    This action cannot be undone. This will permanently delete this product listing.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

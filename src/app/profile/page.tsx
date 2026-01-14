@@ -39,6 +39,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 
 export default function ProfilePage() {
@@ -70,6 +72,13 @@ export default function ProfilePage() {
         } else {
           setAppUser(null);
         }
+      },
+      async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'get',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
       });
       return () => unsubscribe();
     } else if (!user) {
@@ -85,15 +94,18 @@ export default function ProfilePage() {
     if (!firestore || !user) return;
     setIsListingsLoading(true);
     const productsRef = collection(firestore, 'products');
-    const q = query(productsRef, where("seller.id", "==", user.uid));
+    const q = query(productsRef, where("seller.id", "==", user.uid), orderBy("dateAdded", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const listings = querySnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Product, 'id'>), id: doc.id }));
-        // Sort on the client side
-        listings.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
         setUserListings(listings);
         setIsListingsLoading(false);
-    }, (error) => {
-        console.error("Error fetching listings: ", error);
+    }, 
+    async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: productsRef.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
         setIsListingsLoading(false);
     });
     return () => unsubscribe();
@@ -114,17 +126,13 @@ export default function ProfilePage() {
         const sales = querySnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Purchase, 'id'>), id: doc.id }));
         setUserSales(sales);
         setIsSalesLoading(false);
-    }, (error) => {
-        console.error("Error fetching user sales: ", error);
-        // This can fail if the required index is not created.
-        if (error.message.includes("indexes?create_composite")) {
-          toast({
-            variant: "destructive",
-            title: "Database Index Required",
-            description: "The 'My Sales' feature needs a database index. Please check the browser console for a link to create it automatically.",
-            duration: 10000,
-          });
-        }
+    }, 
+    async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'purchases', // collection group queries don't have a simple path
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
         setIsSalesLoading(false);
     });
     return () => unsubscribe();
@@ -140,8 +148,13 @@ export default function ProfilePage() {
         const purchases = querySnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Purchase, 'id'>), id: doc.id }));
         setPurchaseHistory(purchases);
         setIsPurchasesLoading(false);
-    }, (error) => {
-        console.error("Error fetching purchases: ", error);
+    },
+    async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: purchasesRef.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
         setIsPurchasesLoading(false);
     });
     return () => unsubscribe();
@@ -160,8 +173,13 @@ export default function ProfilePage() {
         const fetchedReports = querySnapshot.docs.map(doc => ({ ...(doc.data() as Omit<Report, 'id'>), id: doc.id }));
         setReports(fetchedReports);
         setIsReportsLoading(false);
-    }, (error) => {
-        console.error("Error fetching reports: ", error);
+    },
+    async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: reportsRef.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
         setIsReportsLoading(false);
     });
     return () => unsubscribe();
@@ -175,19 +193,19 @@ export default function ProfilePage() {
 
   const resolveReport = async (reportId: string) => {
     if (!firestore || !isAdmin) return;
+    const reportRef = doc(firestore, 'reports', reportId);
     try {
-        await deleteDoc(doc(firestore, 'reports', reportId));
+        await deleteDoc(reportRef);
         toast({
             title: "Report Resolved",
             description: "The report has been removed.",
         });
     } catch (error) {
-        console.error("Error resolving report:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not resolve the report.",
+        const permissionError = new FirestorePermissionError({
+            path: reportRef.path,
+            operation: 'delete',
         });
+        errorEmitter.emit('permission-error', permissionError);
     }
   };
 

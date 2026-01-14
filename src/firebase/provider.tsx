@@ -77,12 +77,12 @@ export function useFirebaseApp() {
 /**
  * Hook for accessing the Firebase Auth instance and the current user.
  *
- * @returns {{auth: Auth, user: any}} The Firebase Auth instance and the current user.
+ * @returns {{auth: Auth, user: any, firebaseApp: FirebaseApp}} The Firebase Auth instance, the current user, and the Firebase App instance.
  */
 export function useAuth() {
-  const auth = useFirebase().auth;
+  const { auth, firebaseApp } = useFirebase();
   const user = useUser();
-  return { auth, user };
+  return { auth, user, firebaseApp };
 }
 
 /**
@@ -93,3 +93,5 @@ export function useAuth() {
 export function useFirestore() {
   return useFirebase().firestore;
 }
+
+    

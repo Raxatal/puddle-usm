@@ -2,15 +2,14 @@
 "use client";
 
 import { useAuth, useFirestore } from '@/firebase';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import type { User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { MessageCircle } from 'lucide-react';
 
 type Chat = {
     id: string;
@@ -27,7 +26,10 @@ export default function MessagesPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !currentUser) return;
+        if (!firestore || !currentUser) {
+            setIsLoading(false);
+            return;
+        }
 
         setIsLoading(true);
         const chatsRef = collection(firestore, 'chats');
@@ -60,6 +62,30 @@ export default function MessagesPage() {
 
     }, [firestore, currentUser]);
 
+    if (isLoading) {
+        return (
+             <div className="max-w-2xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Your Conversations</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {Array.from({length: 3}).map((_, i) => (
+                            <div key={i} className="flex items-center gap-4 p-2">
+                                <Skeleton className="h-12 w-12 rounded-full" />
+                                <div className="flex-grow space-y-2">
+                                    <Skeleton className="h-4 w-1/3" />
+                                    <Skeleton className="h-4 w-2/3" />
+                                </div>
+                                <Skeleton className="h-4 w-1/4" />
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     if (!currentUser) {
         return (
             <div className="text-center py-20">
@@ -76,31 +102,17 @@ export default function MessagesPage() {
                     <CardTitle>Your Conversations</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {isLoading && (
-                        <div className="space-y-4">
-                            {Array.from({length: 3}).map((_, i) => (
-                                <div key={i} className="flex items-center gap-4 p-2">
-                                    <Skeleton className="h-12 w-12 rounded-full" />
-                                    <div className="flex-grow space-y-2">
-                                        <Skeleton className="h-4 w-1/3" />
-                                        <Skeleton className="h-4 w-2/3" />
-                                    </div>
-                                    <Skeleton className="h-4 w-1/4" />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    {!isLoading && chats.length === 0 && (
+                    {chats.length === 0 ? (
                         <div className="text-center py-16 text-muted-foreground">
+                            <MessageCircle className="mx-auto h-12 w-12 mb-4" />
                             <h2 className="text-xl font-semibold">No messages yet</h2>
                             <p>Start a conversation by contacting a seller on a product page.</p>
                         </div>
-                    )}
-                    {!isLoading && chats.length > 0 && (
+                    ) : (
                          <div className="space-y-2">
                             {chats.map(chat => {
                                 const otherUserId = chat.users.find(id => id !== currentUser.uid);
-                                if (!otherUserId) return null;
+                                if (!otherUserId || !chat.participants || !chat.participants[otherUserId]) return null;
 
                                 const otherParticipant = chat.participants[otherUserId];
 

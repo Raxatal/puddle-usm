@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -10,9 +11,9 @@ import { Send, ImagePlus, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useFirestore } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { uploadFile } from '@/app/actions/upload-actions';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 type ChatBoxProps = {
@@ -22,6 +23,7 @@ type ChatBoxProps = {
 };
 
 export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps) {
+  const { firebaseApp } = useAuth();
   const firestore = useFirestore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -46,10 +48,17 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
         ...doc.data(),
       } as Message));
       setMessages(msgs);
+    }, (error) => {
+      console.error("Error fetching messages: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not load chat messages."
+      });
     });
 
     return () => unsubscribe();
-  }, [firestore, chatId]);
+  }, [firestore, chatId, toast]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -73,7 +82,7 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((newMessage.trim() === '' && !imageFile) || !firestore) return;
+    if ((newMessage.trim() === '' && !imageFile) || !firestore || !firebaseApp) return;
 
     setIsSending(true);
 
@@ -81,15 +90,13 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
         let imageUrl: string | undefined = undefined;
 
         if (imageFile) {
-            const formData = new FormData();
-            formData.append('file', imageFile);
-            const uploadResult = await uploadFile(formData);
-
-            if (uploadResult.success && uploadResult.filePath) {
-                imageUrl = uploadResult.filePath;
-            } else {
-                throw new Error(uploadResult.message || 'Image upload failed.');
-            }
+          const storage = getStorage(firebaseApp);
+          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+          const filename = `${uniqueSuffix}-${imageFile.name.replace(/\s/g, '_')}`;
+          const storageRef = ref(storage, `image_uploads/${filename}`);
+          
+          const snapshot = await uploadBytes(storageRef, imageFile);
+          imageUrl = await getDownloadURL(snapshot.ref);
         }
         
         const messageText = newMessage.trim();
@@ -111,11 +118,9 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
         if (imageUrl) {
             messageData.imageUrl = imageUrl;
         }
-
-        const messagesColRef = collection(firestore, 'chats', chatId, 'messages');
-        await addDoc(messagesColRef, messageData);
         
         const chatDocRef = doc(firestore, 'chats', chatId);
+        // Ensure the chat document exists with participant info
         await setDoc(chatDocRef, {
             users: [currentUser.id, otherUser.id],
             lastMessage: lastMessage,
@@ -125,6 +130,9 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
                 [otherUser.id]: { name: otherUser.name, avatarUrl: otherUser.avatarUrl },
             }
         }, { merge: true });
+
+        const messagesColRef = collection(firestore, 'chats', chatId, 'messages');
+        await addDoc(messagesColRef, messageData);
 
         setNewMessage('');
         removeImage();
@@ -241,5 +249,3 @@ export function ChatBox({ currentUser, otherUser, relatedProduct }: ChatBoxProps
     </Card>
   );
 }
-
-    

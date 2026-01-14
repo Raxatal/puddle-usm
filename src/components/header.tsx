@@ -124,6 +124,7 @@ export function Header() {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild><Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/messages"><MessageCircle className="mr-2 h-4 w-4" />Messages</Link></DropdownMenuItem>
                 <LogoutDialog onLogout={handleLogout} asItem>
                     <LogOut className="mr-2 h-4 w-4" />Log out
                 </LogoutDialog>

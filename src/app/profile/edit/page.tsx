@@ -16,8 +16,9 @@ import Image from 'next/image';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateProfile } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { uploadFile } from '@/app/actions/upload-actions';
+
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -61,7 +62,7 @@ const profileSchema = z.object({
 export default function EditProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, firebaseApp } = useAuth();
   const firestore = useFirestore();
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -98,13 +99,14 @@ export default function EditProfilePage() {
   }, [user, firestore, form]);
   
   const handleFileUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const uploadResult = await uploadFile(formData);
-    if (!uploadResult.success) {
-      throw new Error(uploadResult.message);
-    }
-    return uploadResult.filePath;
+    if (!firebaseApp) throw new Error("Firebase not initialized");
+    const storage = getStorage(firebaseApp);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const filename = `${uniqueSuffix}-${file.name.replace(/\s/g, '_')}`;
+    const storageRef = ref(storage, `image_uploads/${filename}`);
+
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
   }
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
@@ -126,7 +128,6 @@ export default function EditProfilePage() {
         name: values.name,
       };
 
-      // Prepare auth profile updates
       const authUpdateData: { displayName?: string, photoURL?: string } = {
         displayName: values.name,
       };
@@ -134,8 +135,7 @@ export default function EditProfilePage() {
       if (values.avatar) {
         const avatarPath = await handleFileUpload(values.avatar);
         updateData.avatarUrl = avatarPath;
-        // Firebase Auth photoURL should be an absolute URL
-        authUpdateData.photoURL = `${window.location.origin}${avatarPath}`;
+        authUpdateData.photoURL = avatarPath;
       }
       
       if (values.qrCode) {
@@ -143,7 +143,6 @@ export default function EditProfilePage() {
         updateData.qrCodeUrl = qrPath;
       }
       
-      // Update Firestore and Auth profile in parallel
       await Promise.all([
         updateDoc(userDocRef, updateData),
         updateProfile(user, authUpdateData)
@@ -339,3 +338,5 @@ export default function EditProfilePage() {
     </div>
   );
 }
+
+    

@@ -21,7 +21,7 @@ import { useCart } from '@/context/cart-context';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useAuth, useFirestore } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp, addDoc } from 'firebase/firestore';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -55,7 +55,6 @@ export function PaymentDialog({ item, children }: { item: CartItem, children: Re
 
         const buyerPurchaseRef = doc(collection(firestore, 'users', user.uid, 'purchases'));
         const cartItemRef = doc(firestore, 'users', user.uid, 'cart', item.product.id);
-        const sellerNotificationRef = doc(collection(firestore, 'users', item.product.seller.id, 'notifications'));
         
         try {
             await runTransaction(firestore, async (transaction) => {
@@ -75,25 +74,29 @@ export function PaymentDialog({ item, children }: { item: CartItem, children: Re
                 // 2. Remove item from buyer's cart
                 transaction.delete(cartItemRef);
 
-                // 3. Create a notification for the seller
-                const notificationTitle = method === 'cod' ? "Cash on Delivery Request" : "Payment Received - Action Required";
-                const notificationMessage = `A buyer has initiated a purchase for your item: "${item.product.name}". Please confirm the transaction to proceed.`;
-                
-                transaction.set(sellerNotificationRef, {
-                    userId: item.product.seller.id,
-                    title: notificationTitle,
-                    message: notificationMessage,
-                    date: serverTimestamp(),
-                    read: false,
-                    actionUrl: `/inbox`,
-                    actionType: 'confirm_transaction',
-                    metadata: {
-                        buyerId: user.uid,
-                        productId: item.product.id,
-                        purchaseId: buyerPurchaseRef.id
-                    }
-                });
+                // 3. Create a notification for the seller (outside transaction to avoid contention)
             });
+            
+            // Create notification for seller after transaction succeeds
+            const sellerNotificationRef = collection(firestore, 'users', item.product.seller.id, 'notifications');
+            const notificationTitle = method === 'cod' ? "Cash on Delivery Request" : "Payment Received - Action Required";
+            const notificationMessage = `A buyer has initiated a purchase for your item: "${item.product.name}". Please confirm the transaction to proceed.`;
+            
+            await addDoc(sellerNotificationRef, {
+                userId: item.product.seller.id,
+                title: notificationTitle,
+                message: notificationMessage,
+                date: serverTimestamp(),
+                read: false,
+                actionUrl: `/inbox`,
+                actionType: 'confirm_transaction',
+                metadata: {
+                    buyerId: user.uid,
+                    productId: item.product.id,
+                    purchaseId: buyerPurchaseRef.id
+                }
+            });
+
 
             toast({
                 title: "Purchase Initiated",
@@ -227,7 +230,7 @@ export function PaymentDialog({ item, children }: { item: CartItem, children: Re
             <>
               <Button variant="outline" onClick={() => setStep('select_method')}>Back</Button>
                {paymentMethod === 'ewallet' && <Button type="button" onClick={() => initiatePurchase('ewallet')}>Confirm Payment</Button>}
-               {paymentMethod === 'cod' && <CodConfirmationDialog onConfirm={() => initiatePurchase('cod')} />}
+               {paymentMethod === 'cod' && <Button type="button" onClick={() => initiatePurchase('cod')}>Confirm Payment</Button>}
                {paymentMethod === 'banking' && <Button type="button" onClick={() => initiatePurchase('banking')}>Pay with FPX</Button>}
             </>
           )}

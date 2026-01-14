@@ -24,6 +24,7 @@ const formSchema = z.object({
       message: 'Please use a valid USM student email (@student.usm.my).',
     }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
+  confirm: z.string().optional(), // Honeypot field
 });
 
 export default function RegisterPage() {
@@ -37,6 +38,18 @@ export default function RegisterPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Honeypot check
+    if (values.confirm) {
+        // This is likely a bot, so we don't proceed.
+        // We can show a generic message or just do nothing.
+        toast({
+            variant: "destructive",
+            title: "Registration Failed",
+            description: "An unexpected error occurred.",
+        });
+        return;
+    }
+
     if (!auth || !firestore) return;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -129,6 +142,23 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+              
+              {/* Honeypot Field: Hidden from users, present for bots */}
+              <div className="hidden">
+                  <FormField
+                    control={form.control}
+                    name="confirm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm</FormLabel>
+                        <FormControl>
+                          <Input tabIndex={-1} autoComplete="off" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+              </div>
+              
               <Button type="submit" className="w-full">Create Account</Button>
             </form>
           </Form>

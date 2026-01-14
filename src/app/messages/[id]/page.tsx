@@ -1,38 +1,70 @@
+
 "use client";
 
 import { useSearchParams, notFound, useParams } from 'next/navigation';
 import { ChatBox } from '@/components/chat-box';
-import { products } from '@/lib/data';
 import { useAuth, useFirestore } from '@/firebase';
-import type { User as AuthUser } from 'firebase/auth';
-import type { User } from '@/lib/types';
+import type { User, Product } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function MessagePage() {
   const searchParams = useSearchParams();
   const params = useParams();
   const firestore = useFirestore();
-  const productId = searchParams.get('product');
-
+  
   const { user: currentUser } = useAuth();
   const otherUserId = params.id as string;
   
   const [otherUser, setOtherUser] = useState<User | null>(null);
+  const [relatedProduct, setRelatedProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const relatedProduct = productId ? products.find(p => p.id === productId) : undefined;
-
   useEffect(() => {
     if (!firestore || !otherUserId) return;
+
+    setIsLoading(true);
     const userDocRef = doc(firestore, 'users', otherUserId);
-    getDoc(userDocRef).then(docSnap => {
-        if (docSnap.exists()) {
-            setOtherUser(docSnap.data() as User);
+    const productId = searchParams.get('product');
+
+    const fetchInitialData = async () => {
+        try {
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                setOtherUser(userDocSnap.data() as User);
+            } else {
+                setOtherUser(null); // User not found
+            }
+
+            if (productId) {
+                const productDocRef = doc(firestore, 'products', productId);
+                const productDocSnap = await getDoc(productDocRef);
+                if (productDocSnap.exists()) {
+                    setRelatedProduct({ id: productDocSnap.id, ...productDocSnap.data() } as Product);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch initial chat data:", err);
+            setOtherUser(null);
+        } finally {
+            setIsLoading(false);
         }
-    });
-  }, [firestore, otherUserId]);
+    };
+    
+    fetchInitialData();
+  }, [firestore, otherUserId, searchParams]);
   
+  
+  if (isLoading) {
+    return (
+        <div className="max-w-4xl mx-auto">
+            <Skeleton className="h-9 w-48 mb-4" />
+            <Skeleton className="h-[70vh] w-full" />
+        </div>
+    );
+  }
   
   if (!currentUser) {
     return (
@@ -44,11 +76,7 @@ export default function MessagePage() {
   }
   
   if (!otherUser) {
-    return (
-        <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold">Loading chat...</h2>
-        </div>
-    )
+    notFound();
   }
 
   // Create a User object from the firebase auth user
@@ -65,7 +93,7 @@ export default function MessagePage() {
         <ChatBox
             currentUser={loggedInUser}
             otherUser={otherUser}
-            relatedProduct={relatedProduct}
+            relatedProduct={relatedProduct || undefined}
         />
     </div>
   );

@@ -18,8 +18,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useAuth, useFirestore } from '@/firebase';
 import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { User as AppUser } from '@/lib/types';
-import { uploadFile } from '@/app/actions/upload-actions';
 
 const productSchema = z.object({
   name: z.string().min(3, 'Product name must be at least 3 characters.'),
@@ -34,7 +34,7 @@ export default function NewProductPage() {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, firebaseApp } = useAuth();
   const firestore = useFirestore();
   
   const form = useForm<z.infer<typeof productSchema>>({
@@ -49,7 +49,20 @@ export default function NewProductPage() {
   });
 
   async function onSubmit(values: z.infer<typeof productSchema>) {
-    if (!user || !firestore) {
+    // Server-Side Validation
+    const validationResult = productSchema.safeParse(values);
+    if (!validationResult.success) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Data",
+        description: "The submitted data is invalid. Please check the form and try again.",
+      });
+      // Optionally, log the detailed error for debugging
+      console.error("Server-side validation failed:", validationResult.error);
+      return;
+    }
+
+    if (!user || !firestore || !firebaseApp) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -71,32 +84,26 @@ export default function NewProductPage() {
         
         const sellerData = userDoc.data() as AppUser;
 
-        const selectedCategory = categories.find(c => c.id === values.category);
+        const selectedCategory = categories.find(c => c.id === validationResult.data.category);
         if (!selectedCategory) {
             throw new Error("Invalid category selected.");
         }
         
         let imageUrl = 'https://picsum.photos/seed/placeholder/600/400'; // Default placeholder
-        if (values.image) {
-            const formData = new FormData();
-            formData.append('file', values.image);
-            const uploadResult = await uploadFile(formData);
-            if (uploadResult.success && uploadResult.filePath) {
-                imageUrl = uploadResult.filePath;
-            } else {
-                // If upload fails but an image was selected, inform user but don't block listing creation
-                 toast({
-                    variant: "destructive",
-                    title: "Image upload failed",
-                    description: `${uploadResult.message} A default image will be used.`,
-                });
-            }
+        if (validationResult.data.image) {
+            const storage = getStorage(firebaseApp);
+            const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+            const filename = `${uniqueSuffix}-${validationResult.data.image.name.replace(/\s/g, '_')}`;
+            const storageRef = ref(storage, `image_uploads/${filename}`);
+            
+            const snapshot = await uploadBytes(storageRef, validationResult.data.image);
+            imageUrl = await getDownloadURL(snapshot.ref);
         }
 
         await addDoc(collection(firestore, "products"), {
-            name: values.name,
-            description: values.description,
-            price: values.price,
+            name: validationResult.data.name,
+            description: validationResult.data.description,
+            price: validationResult.data.price,
             category: selectedCategory,
             seller: sellerData,
             imageUrls: [imageUrl],
@@ -105,7 +112,7 @@ export default function NewProductPage() {
 
         toast({
             title: 'Listing Created!',
-            description: `${values.name} has been successfully listed for sale.`,
+            description: `${validationResult.data.name} has been successfully listed for sale.`,
         });
         router.push('/products');
 
@@ -259,3 +266,5 @@ export default function NewProductPage() {
     </div>
   );
 }
+
+    
